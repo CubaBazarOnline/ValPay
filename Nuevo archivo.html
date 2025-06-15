@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ValPay</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --border: #dee2e6;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --radius: 8px;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            color: var(--dark);
+            background-color: #f5f7fa;
+        }
+        
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        h1, h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .required::after {
+            content: " *";
+            color: #e63946;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .category-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .category-option {
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .category-option.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .picture-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .picture-input {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .picture-input input {
+            flex: 1;
+        }
+        
+        .remove-picture {
+            background: #e63946;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .add-picture {
+            background: var(--gray);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-top: 5px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--gray);
+            color: var(--dark);
+        }
+        
+        .btn-outline:hover {
+            background: var(--light);
+        }
+        
+        #xmlOutput {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .result-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--dark);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: var(--shadow);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>ValPay</h1>
+        
+        <form id="productForm">
+            <div class="form-grid">
+                <!-- Información básica -->
+                <div class="form-group">
+                    <label for="ref" class="required">Referencia</label>
+                    <input type="text" id="ref" required pattern="[A-Za-z0-9\-]+" 
+                           placeholder="PROD-10025" title="Solo letras, números y guiones">
+                </div>
+                
+                <div class="form-group">
+                    <label for="title" class="required">Título</label>
+                    <input type="text" id="title" required placeholder="Nombre del producto">
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="content">Descripción</label>
+                    <textarea id="content" placeholder="Descripción detallada del producto..."></textarea>
+                </div>
+                
+                <!-- Categorías -->
+                <div class="form-group">
+                    <label class="required">Categoría</label>
+                    <div class="category-selector" id="categorySelector">
+                        <!-- Categorías se insertarán con JavaScript -->
+                    </div>
+                    <input type="hidden" id="category" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="subcategory">Subcategoría</label>
+                    <input type="text" id="subcategory" placeholder="Subcategoría del producto">
+                </div>
+                
+                <!-- Precio -->
+                <div class="form-group">
+                    <label for="price" class="required">Precio</label>
+                    <input type="number" id="price" required min="0" step="0.01" placeholder="0.00">
+                </div>
+                
+                <div class="form-group">
+                    <label for="price_descr">Descripción del precio</label>
+                    <input type="text" id="price_descr" placeholder="Ej: USD, impuestos incluidos">
+                </div>
+                
+                <!-- Fechas -->
+                <div class="form-group">
+                    <label for="year">Año</label>
+                    <input type="number" id="year" min="2000" max="2100" placeholder="2023">
+                </div>
+                
+                <div class="form-group">
+                    <label for="month">Mes</label>
+                    <input type="number" id="month" min="1" max="12" placeholder="1-12">
+                </div>
+                
+                <div class="form-group">
+                    <label for="day">Día</label>
+                    <input type="number" id="day" min="1" max="31" placeholder="1-31">
+                </div>
+                
+                <!-- URLs -->
+                <div class="form-group full-width">
+                    <label for="detail_url">URL de detalles</label>
+                    <input type="url" id="detail_url" placeholder="https://www.ejemplo.com/producto">
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="buy_url">URL de compra</label>
+                    <input type="url" id="buy_url" placeholder="https://www.ejemplo.com/comprar">
+                </div>
+                
+                <!-- Imágenes -->
+                <div class="form-group full-width">
+                    <label>Imágenes</label>
+                    <div class="picture-container" id="pictureContainer">
+                        <!-- Las imágenes se añadirán dinámicamente -->
+                    </div>
+                    <button type="button" class="add-picture" id="addPictureBtn">
+                        <span>+</span> Añadir imagen
+                    </button>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button type="button" class="btn-outline" id="resetBtn">
+                    <span>🗑️</span>Limpiar
+                </button>
+                <button type="submit" class="btn-primary" id="generateBtn">
+                    <span>⚙️</span>Crear XML
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="card" id="resultCard" style="display: none;">
+        <h2>Resultado XML</h2>
+        <pre id="xmlOutput"></pre>
+        <div class="result-actions">
+            <button type="button" class="btn-outline" id="copyBtn">
+                <span>⎘</span> Copiar
+            </button>
+            <button type="button" class="btn-primary" id="downloadBtn">
+                <span>⭳</span> Descargar
+            </button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Categorías predeterminadas
+            const categories = [
+                'Productos', 'Servicios', 'Accesorios', 'Ropas', 
+                'Rentas', 'Comestible', 'Empleos', 'Intercambios', 
+                'Viviendas', 'Electronicos'
+            ];
+            
+            // Elementos del DOM
+            const form = document.getElementById('productForm');
+            const categorySelector = document.getElementById('categorySelector');
+            const categoryInput = document.getElementById('category');
+            const pictureContainer = document.getElementById('pictureContainer');
+            const resultCard = document.getElementById('resultCard');
+            const xmlOutput = document.getElementById('xmlOutput');
+            const toast = document.getElementById('toast');
+            
+            // Inicializar categorías
+            categories.forEach(category => {
+                const option = document.createElement('div');
+                option.className = 'category-option';
+                option.textContent = category;
+                option.addEventListener('click', function() {
+                    // Deseleccionar todas las opciones
+                    document.querySelectorAll('.category-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    
+                    // Seleccionar esta opción
+                    this.classList.add('selected');
+                    categoryInput.value = category;
+                });
+                categorySelector.appendChild(option);
+            });
+            
+            // Añadir campo de imagen
+            document.getElementById('addPictureBtn').addEventListener('click', function() {
+                const pictureDiv = document.createElement('div');
+                pictureDiv.className = 'picture-input';
+                pictureDiv.innerHTML = `
+                    <input type="url" class="picture-url" placeholder="https://www.ejemplo.com/imagen.jpg">
+                    <button type="button" class="remove-picture">×</button>
+                `;
+                pictureContainer.insertBefore(pictureDiv, this);
+                
+                // Añadir evento para eliminar imagen
+                pictureDiv.querySelector('.remove-picture').addEventListener('click', function() {
+                    pictureContainer.removeChild(pictureDiv);
+                });
+            });
+            
+            // Generar XML
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Validar campos requeridos
+                if (!validateRequiredFields()) {
+                    return;
+                }
+                
+                // Obtener valores del formulario
+                const formData = {
+                    ref: document.getElementById('ref').value.trim(),
+                    title: document.getElementById('title').value.trim(),
+                    content: document.getElementById('content').value.trim(),
+                    category: categoryInput.value,
+                    subcategory: document.getElementById('subcategory').value.trim(),
+                    price: document.getElementById('price').value.trim(),
+                    price_descr: document.getElementById('price_descr').value.trim(),
+                    year: document.getElementById('year').value.trim(),
+                    month: document.getElementById('month').value.trim(),
+                    day: document.getElementById('day').value.trim(),
+                    detail_url: document.getElementById('detail_url').value.trim(),
+                    buy_url: document.getElementById('buy_url').value.trim(),
+                    pictures: Array.from(document.querySelectorAll('.picture-url')).map(input => input.value.trim())
+                };
+                
+                // Generar XML
+                const xml = generateProductXml(formData);
+                xmlOutput.textContent = xml;
+                resultCard.style.display = 'block';
+                
+                // Desplazarse al resultado
+                resultCard.scrollIntoView({ behavior: 'smooth' });
+                
+                showToast('XML generado correctamente', 'success');
+            });
+            
+            // Validar campos requeridos
+            function validateRequiredFields() {
+                const requiredFields = [
+                    { id: 'ref', name: 'Referencia' },
+                    { id: 'title', name: 'Título' },
+                    { id: 'category', name: 'Categoría' },
+                    { id: 'price', name: 'Precio' }
+                ];
+                
+                for (const field of requiredFields) {
+                    const element = document.getElementById(field.id);
+                    if (!element.value.trim()) {
+                        element.focus();
+                        showToast(`El campo "${field.name}" es requerido`, 'error');
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+            
+            // Generar XML según la estructura especificada
+            function generateProductXml(data) {
+                const today = new Date();
+                
+                let xml = `<?xml version="1.0" encoding="utf-8"?>\n`;
+                xml += `<list>\n\n`;
+                xml += `  <product>\n`;
+                xml += `    <ref>${escapeXml(data.ref)}</ref>\n`;
+                xml += `    <title>${escapeXml(data.title)}</title>\n`;
+                xml += `    <content>${escapeXml(data.content)}</content>\n`;
+                xml += `    <category>${escapeXml(data.category)}</category>\n`;
+                xml += `    <subcategory>${escapeXml(data.subcategory)}</subcategory>\n`;
+                xml += `    <price>${escapeXml(data.price)}</price>\n`;
+                xml += `    <price_descr>${escapeXml(data.price_descr)}</price_descr>\n`;
+                xml += `    <year>${data.year || today.getFullYear()}</year>\n`;
+                xml += `    <month>${data.month || String(today.getMonth() + 1).padStart(2, '0')}</month>\n`;
+                xml += `    <day>${data.day || String(today.getDate()).padStart(2, '0')}</day>\n`;
+                xml += `    <detail_url>${escapeXml(data.detail_url)}</detail_url>\n`;
+                xml += `    <buy_url>${escapeXml(data.buy_url)}</buy_url>\n`;
+                
+                // Añadir imágenes si existen
+                if (data.pictures.length > 0) {
+                    xml += `    <pictures>\n`;
+                    data.pictures.filter(url => url).forEach(url => {
+                        xml += `      <picture_url>${escapeXml(url)}</picture_url>\n`;
+                    });
+                    xml += `    </pictures>\n`;
+                }
+                
+                xml += `  </product>\n\n`;
+                xml += `</list>`;
+                
+                return formatXml(xml);
+            }
+            
+            // Formatear XML para mejor legibilidad
+            function formatXml(xml) {
+                const PADDING = '  ';
+                let formatted = '';
+                let indent = 0;
+                
+                xml.split(/>\s*</).forEach(node => {
+                    if (node.match(/^\/\w/)) indent--;
+                    formatted += PADDING.repeat(indent) + '<' + node + '>\n';
+                    if (node.match(/^<?\w[^>]*[^\/]$/)) indent++;
+                });
+                
+                return formatted.substring(1, formatted.length - 3);
+            }
+            
+            // Escapar caracteres especiales en XML
+            function escapeXml(unsafe) {
+                if (!unsafe) return '';
+                return unsafe.replace(/[<>&'"]/g, function(c) {
+                    switch (c) {
+                        case '<': return '&lt;';
+                        case '>': return '&gt;';
+                        case '&': return '&amp;';
+                        case '\'': return '&apos;';
+                        case '"': return '&quot;';
+                        default: return c;
+                    }
+                });
+            }
+            
+            // Copiar XML al portapapeles
+            document.getElementById('copyBtn').addEventListener('click', function() {
+                navigator.clipboard.writeText(xmlOutput.textContent)
+                    .then(() => showToast('XML copiado al portapapeles', 'success'))
+                    .catch(err => showToast('Error al copiar: ' + err, 'error'));
+            });
+            
+            // Descargar XML
+            document.getElementById('downloadBtn').addEventListener('click', function() {
+                const blob = new Blob([xmlOutput.textContent], { type: 'application/xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                
+                a.href = url;
+                a.download = `producto_${document.getElementById('ref').value.trim() || 'sin_ref'}.xml`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showToast('Descarga iniciada', 'success');
+            });
+            
+            // Limpiar formulario
+            document.getElementById('resetBtn').addEventListener('click', function() {
+                if (confirm('¿Estás seguro de que quieres limpiar el formulario?')) {
+                    form.reset();
+                    document.querySelectorAll('.category-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    categoryInput.value = '';
+                    pictureContainer.innerHTML = '';
+                    resultCard.style.display = 'none';
+                    showToast('Formulario limpiado', 'success');
+                }
+            });
+            
+            // Mostrar notificación toast
+            function showToast(message, type = 'info') {
+                toast.textContent = message;
+                toast.className = 'toast';
+                
+                switch (type) {
+                    case 'success':
+                        toast.style.backgroundColor = '#4bb543';
+                        break;
+                    case 'error':
+                        toast.style.backgroundColor = '#e63946';
+                        break;
+                    default:
+                        toast.style.backgroundColor = '#4361ee';
+                }
+                
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
