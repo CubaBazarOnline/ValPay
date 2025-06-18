@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Generador de XML para productos ValPay - Crea fácilmente archivos XML para tus productos">
     <meta name="keywords" content="ValPay, XML, generador, productos, ecommerce">
-    <link rel="icon" type="image/png" href="logo.png">
-    <meta name="google-site-verification" content="KwYd-p4Sl1VlkdQmdyKKgwMpT7BsxFKygnGzibzNijQ">
     <title>VALPAY</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💳</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22 fill=%22%236633cc%22>V</text></svg>">
     <style>
         :root {
             --primary: #4361ee;
@@ -114,6 +112,11 @@
             background-color: var(--light);
         }
 
+        input:disabled {
+            background-color: var(--light-gray);
+            cursor: not-allowed;
+        }
+
         input:focus, textarea:focus, select:focus {
             outline: none;
             border-color: var(--primary);
@@ -199,24 +202,6 @@
 
         .remove-picture:hover {
             background: #c1121f;
-        }
-
-        .add-picture {
-            background: var(--gray);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 8px 12px;
-            margin-top: 5px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            transition: var(--transition);
-        }
-
-        .add-picture:hover {
-            background: #5a6268;
         }
 
         .actions {
@@ -360,6 +345,13 @@
             animation: spin 0.6s linear infinite;
         }
 
+        .disabled-field-note {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 5px;
+            font-style: italic;
+        }
+
         @media (max-width: 768px) {
             .form-grid {
                 grid-template-columns: 1fr;
@@ -413,7 +405,8 @@
                         
                         <div class="form-group">
                             <label for="subcategory">Subcategoría</label>
-                            <input type="text" id="subcategory" placeholder="Subcategoría del producto">
+                            <input type="text" id="subcategory" placeholder="Subcategoría del producto" disabled>
+                            <p class="disabled-field-note">La subcategoría no está disponible actualmente</p>
                         </div>
                         
                         <!-- Precio -->
@@ -456,13 +449,11 @@
                         
                         <!-- Imágenes -->
                         <div class="form-group full-width">
-                            <label>Imágenes</label>
-                            <div class="picture-container" id="pictureContainer">
-                                <!-- Las imágenes se añadirán dinámicamente -->
+                            <label for="picture_url">URL de la imagen</label>
+                            <input type="url" id="picture_url" placeholder="https://www.ejemplo.com/imagen.jpg">
+                            <div class="image-preview" id="imagePreview" style="display: none; margin-top: 10px;">
+                                <img src="" alt="Vista previa de la imagen">
                             </div>
-                            <button type="button" class="add-picture" id="addPictureBtn">
-                                <span>+</span> Añadir imagen
-                            </button>
                         </div>
                     </div>
                     
@@ -516,7 +507,9 @@
             const form = document.getElementById('productForm');
             const categorySelector = document.getElementById('categorySelector');
             const categoryInput = document.getElementById('category');
-            const pictureContainer = document.getElementById('pictureContainer');
+            const pictureUrlInput = document.getElementById('picture_url');
+            const imagePreview = document.getElementById('imagePreview');
+            const previewImg = imagePreview.querySelector('img');
             const resultSection = document.getElementById('resultSection');
             const resultCard = document.getElementById('resultCard');
             const xmlOutput = document.getElementById('xmlOutput');
@@ -559,62 +552,42 @@
                 saveFormData();
             }, 300));
             
-            // Añadir campo de imagen con previsualización
-            document.getElementById('addPictureBtn').addEventListener('click', addPictureField);
-            
-            function addPictureField(url = '') {
-                const pictureDiv = document.createElement('div');
-                pictureDiv.className = 'picture-input';
-                pictureDiv.innerHTML = `
-                    <input type="url" class="picture-url" placeholder="https://www.ejemplo.com/imagen.jpg" 
-                           value="${url}" aria-label="URL de imagen">
-                    <div class="image-preview" style="${url ? '' : 'display:none'}">
-                        <img src="${url || ''}" onerror="this.parentNode.style.display='none'">
-                    </div>
-                    <button type="button" class="remove-picture" aria-label="Eliminar imagen">×</button>
-                `;
-                pictureContainer.insertBefore(pictureDiv, document.getElementById('addPictureBtn'));
-                
-                // Eventos para la imagen
-                const input = pictureDiv.querySelector('.picture-url');
-                const preview = pictureDiv.querySelector('.image-preview');
-                const img = preview.querySelector('img');
-                
-                input.addEventListener('input', debounce(() => {
-                    if (input.value.trim()) {
-                        img.src = input.value.trim();
-                        preview.style.display = 'block';
-                    } else {
-                        preview.style.display = 'none';
-                    }
-                    saveFormData();
-                }, 500));
-                
-                pictureDiv.querySelector('.remove-picture').addEventListener('click', function() {
-                    pictureContainer.removeChild(pictureDiv);
-                    saveFormData();
-                });
-            }
-            
-            // Soporte para arrastrar y soltar imágenes
-            pictureContainer.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                pictureContainer.classList.add('drag-over');
-            });
-            
-            pictureContainer.addEventListener('dragleave', () => {
-                pictureContainer.classList.remove('drag-over');
-            });
-            
-            pictureContainer.addEventListener('drop', (e) => {
-                e.preventDefault();
-                pictureContainer.classList.remove('drag-over');
-                
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    showToast('Arrastra y suelta imágenes no implementado completamente', 'info');
+            // Validar URL de imagen
+            pictureUrlInput.addEventListener('input', debounce(function() {
+                const url = this.value.trim();
+                if (url) {
+                    validateImageUrl(url);
+                } else {
+                    imagePreview.style.display = 'none';
                 }
-            });
+                saveFormData();
+            }, 500));
+            
+            function validateImageUrl(url) {
+                // Primero verificar que sea una URL válida
+                try {
+                    new URL(url);
+                } catch (e) {
+                    showToast('La URL de la imagen no es válida', 'error');
+                    imagePreview.style.display = 'none';
+                    return false;
+                }
+                
+                // Intentar cargar la imagen para verificar
+                previewImg.src = url;
+                imagePreview.style.display = 'block';
+                
+                previewImg.onload = function() {
+                    showToast('Imagen cargada correctamente', 'success');
+                    return true;
+                };
+                
+                previewImg.onerror = function() {
+                    showToast('No se pudo cargar la imagen. Verifica la URL.', 'error');
+                    imagePreview.style.display = 'none';
+                    return false;
+                };
+            }
             
             // Generar XML con estado de carga
             form.addEventListener('submit', async function(e) {
@@ -658,7 +631,7 @@
                     day: document.getElementById('day').value.trim(),
                     detail_url: document.getElementById('detail_url').value.trim(),
                     buy_url: document.getElementById('buy_url').value.trim(),
-                    pictures: Array.from(document.querySelectorAll('.picture-url')).map(input => input.value.trim())
+                    picture_url: document.getElementById('picture_url').value.trim()
                 };
             }
             
@@ -716,12 +689,8 @@
                 xml += `${indent(2)}<detail_url>${escapeXml(data.detail_url)}</detail_url>\n`;
                 xml += `${indent(2)}<buy_url>${escapeXml(data.buy_url)}</buy_url>\n`;
                 
-                if (data.pictures.filter(url => url).length > 0) {
-                    xml += `${indent(2)}<pictures>\n`;
-                    data.pictures.filter(url => url).forEach(url => {
-                        xml += `${indent(3)}<picture_url>${escapeXml(url)}</picture_url>\n`;
-                    });
-                    xml += `${indent(2)}</pictures>\n`;
+                if (data.picture_url) {
+                    xml += `${indent(2)}<picture_url>${escapeXml(data.picture_url)}</picture_url>\n`;
                 }
                 
                 xml += `${indent(1)}</product>\n\n`;
@@ -744,7 +713,7 @@
                         
                         // Llenar campos simples
                         Object.keys(data).forEach(key => {
-                            if (key !== 'pictures' && document.getElementById(key)) {
+                            if (document.getElementById(key)) {
                                 document.getElementById(key).value = data[key] || '';
                             }
                         });
@@ -757,11 +726,9 @@
                             }
                         }
                         
-                        // Añadir imágenes
-                        if (data.pictures && data.pictures.length > 0) {
-                            data.pictures.forEach(url => {
-                                if (url) addPictureField(url);
-                            });
+                        // Mostrar imagen si existe
+                        if (data.picture_url) {
+                            validateImageUrl(data.picture_url);
                         }
                         
                         showToast('Datos anteriores recuperados', 'info');
@@ -838,7 +805,7 @@
                         opt.classList.remove('selected');
                     });
                     categoryInput.value = '';
-                    pictureContainer.innerHTML = '';
+                    imagePreview.style.display = 'none';
                     resultSection.hidden = true;
                     localStorage.removeItem('valpayFormData');
                     showToast('Formulario limpiado', 'success');
